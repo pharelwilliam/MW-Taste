@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#15120E"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+  <title>M&W Tastes — Carte digitale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.js"></script>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    body{margin:0;padding:0;background:#FAF5EA;font-family:'Outfit',sans-serif;overscroll-behavior:none;}
+    #root{min-height:100vh;}
+    .font-display{font-family:'Playfair Display',serif!important;}
+    .scrollbar-thin::-webkit-scrollbar{height:5px;width:5px;}
+    .scrollbar-thin::-webkit-scrollbar-thumb{background:#C8952E;border-radius:4px;}
+    select{-webkit-appearance:none;appearance:none;}
+    input,select,textarea{font-family:'Outfit',sans-serif;}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const {
+  ShoppingBag, ShoppingCart, Plus, Minus, X, Check, Copy, ChevronRight,
+  ChevronLeft, Users, ClipboardList, Settings, Lock, Gift,
+  Percent, TrendingUp, ArrowLeft, Trash2, Pencil, Save, LogOut,
+  Search, Clock, Phone, User, Store, Wallet, Loader2,
+  ChefHat, BadgeCheck, AlertCircle, MapPin, Navigation,
+  Banknote, Smartphone, Building2, Upload, ImagePlus,
+} = lucide;
+const { useState, useEffect, useMemo } = React;
+
+/* ============================== DESIGN TOKENS ============================== */
+const PALETTE = {
+  cream: "#FAF5EA",
+  creamSoft: "#F1E8D4",
+  surface: "#FFFFFF",
+  ink: "#231D14",
+  inkSoft: "#7A7264",
+  black: "#15120E",
+  blackSoft: "#221D16",
+  gold: "#C8952E",
+  goldDeep: "#A87421",
+  goldSoft: "#EAD09B",
+  terracotta: "#B6502E",
+  green: "#5E7D4F",
+  greenSoft: "#E6ECDD",
+  red: "#A23B2E",
+  redSoft: "#F3E0DA",
+  border: "#E6D9BB",
+};
+
+const LOGO_DATA_URI = "data:image/png;base64,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Arjwwgvr6+uJqL6+/pJLLqmpqSnO8bS1tRUa22TXlbaE6q2TrCBLRkTPPPMMDr925B3veEfSYWtpaSne275gwYKOjo5ly5bV1NS89NJLSZlrr702+e6Xv/zlMAw/9KEPFbqXv/vd7wa9xHe+8x0RaW9vLz5XqjjReu655yZfnDdvXk9Pz7/9278V4uS2224rHEtVvCqt2Gc+85m9e/dOnjzZ87wkdVQ8F5qUTzKl3d3ds2bN0iBUb91oMJPJJLv1krp+2223HSEIzzrrrEIm8/3vf3/yxfe+973t7e1btmyZMGFCEATJKs1kRsH3/X/4h39g5mTisby8fMuWLckc44wZM1C03PSXv/yliNxxxx3FqZckK5OMMD/+8Y8ng9K9e/c+/vjjpaWlhbv627/928L9//CHPxx0z0OGDLnpppu6urqSGx49enSydbCrq6twD8nLJav27rnnHg0/9ZZKVnUlFT1po45QODlhKSm/YcOGb37zm8mSlB07dsyZMwdAXV3dtm3bkhmFvXv3vvDCC8Wbg1OpVGFf31133VVYwjJt2rTm5uZdu3YVFsQkYZCkPZO85ZYtW+66664oip5++ukkTVooOWvWrGQag5nDMPzJT35yxhlnjBs37vTTT//ud7+7a9eu1tbW973vfYUu6/r165OIvffeewuzgtOnT29paWlsbJw6darWCvVWqK6uPvfcc2+55ZYk21nAzN/97nfPOOOM4opeXOOTvl8haEVk3bp1SQQaY9LpdLJcJrmscy6Z+sNBS1tE5KmnnvrUpz51zTXXNDQ07N69u7ChHkU7mwrXSX7kZz/7WWHHQ3HJH/7wh0mBpGQURd3d3clXnn766WnTphX/K77whS8U7uGJJ574zGc+c8011+zYsWPPnj1HuY9Zqf8GV155ZWtra0dHR9NB2tvbW1pakn2uB3fMRo0alRwcnGxyv/322wu5k8QXv/jFJHJWrlyZTNYXOrfJHz73uc8lC98S2Wz2vvvuO+RYzhjzrW99q7u7u729feHChcnMwSGVl5f/4he/KAReMj5cuHDhxz/+8YM3UhHRlVdeuXHjxkJh59yDDz741p8m/jYZ1+hb8OZGg2VlZalU6nAJfSLKZrPZbHZQmj5JTpaWlp5yyinpdLqpqSnpXlprk2fIJGO8uXPnlpWVvfTSSz09PdbawgFnyXfjOB46dOi8efOmTZu2bdu29evXJ7MaxSWLX27atGlhGO7atSuKooPLFJs5c+aECROMMblcbuPGjTt27GDmQUdRJUHIzNXV1aeddtrMmTP37NmzatWqZCirdUP9r0nnHPkrRy585MNFj/LKb/puoYeLKqWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSb63/B1y/msuBI866AAAAAElFTkSuQmCC";
+const IMAGES = {};
+const img = (key) => {
+  if (!key) return null;
+  if (typeof key === "string" && key.startsWith("data:")) return key;
+  return IMAGES[key] ? `data:image/jpeg;base64,${IMAGES[key]}` : null;
+};
+
+function resizeImageFile(file, maxDim = 640, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const image = new window.Image();
+      image.onload = () => {
+        let { width, height } = image;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
+          else { width = Math.round((width * maxDim) / height); height = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      image.onerror = reject;
+      image.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+const PAYMENT_METHODS = [
+  { id: "especes", label: "Espèces", hint: "Paiement à la remise" },
+  { id: "mtn", label: "MTN MoMo", hint: "Mobile Money" },
+  { id: "orange", label: "Orange Money", hint: "Mobile Money" },
+  { id: "banque", label: "Virement bancaire", hint: "Paiement bancaire" },
+];
+
+const ORDER_TYPES = [
+  { id: "emporter", label: "À emporter", icon: ShoppingBag },
+  { id: "surplace", label: "Sur place", icon: Store },
+  { id: "livraison", label: "Livraison", icon: MapPin },
+];
+
+const CATEGORIES = [
+  { id: "sale", label: "Salés", icon: "🌶️" },
+  { id: "sucre", label: "Sucrés", icon: "🧁" },
+  { id: "boisson", label: "Boissons", icon: "🥤" },
+];
+
+const GROUPS_META = [
+  { id: "burgers", label: "Burgers", category: "sale", icon: "🍔" },
+  { id: "poulet-pane", label: "Poulet Pané", category: "sale", icon: "🍗" },
+  { id: "crepes-salees", label: "Crêpes Salées", category: "sale", icon: "🌯" },
+  { id: "nems", label: "Nems", category: "sale", icon: "🥟" },
+  { id: "pili-pili", label: "Pili Pili", category: "sale", icon: "🌶️" },
+  { id: "frites", label: "Frites", category: "sale", icon: "🍟" },
+  { id: "cupcakes", label: "Cup Cakes", category: "sucre", icon: "🧁" },
+  { id: "minicakes", label: "Mini Cakes", category: "sucre", icon: "🍰" },
+  { id: "crepes-sucrees", label: "Crêpes Sucrées", category: "sucre", icon: "🍫" },
+  { id: "jus", label: "Jus de Fruits", category: "boisson", icon: "🥤" },
+];
+
+const DEFAULT_MENU = [
+  { id: "burger-classique", groupId: "burgers", name: "Burger Classique", desc: "Steak juteux, fromage fondant, salade fraîche, sauce maison", price: 1500, image: "burger_classique", active: true },
+  { id: "burger-poulet", groupId: "burgers", name: "Burger Poulet", desc: "Poulet croustillant, crudités, sauce signature", price: 1500, image: "burger_poulet", active: true },
+  { id: "burger-double", groupId: "burgers", name: "Burger Double", desc: "Double steak, double fromage, pour les grosses faims", price: 2000, image: "burger_double", active: true },
+  { id: "burger-frites", groupId: "burgers", name: "Burger et Frites", desc: "Burger classique accompagné de frites croustillantes", price: 2000, image: "burger_frites", active: true },
+  { id: "burger-poulet-combo", groupId: "burgers", name: "Burger, Frites et 3 Morceaux de Poulet", desc: "Burger, frites et trois morceaux de poulet pané, mayonnaise", price: 3000, image: "combo_burger_poulet_frites", active: true },
+  { id: "combo-5500", groupId: "burgers", name: "Double Cheese Burger + Poulet + Frites + Jus", desc: "Double cheese burger, frites (plantain/pommes), 5 morceaux de poulet et 1 jus 35cl", price: 5500, image: "combo_5pc_burger_jus", active: true },
+
+  { id: "pp-3pc", groupId: "poulet-pane", name: "3 Morceaux + Frites + Mayo", desc: "Trois morceaux de poulet pané croustillant, frites et mayo maison", price: 1500, image: null, active: true },
+  { id: "pp-3pc-frites-pommes", groupId: "poulet-pane", name: "3 Morceaux de Poulet et Frites de Pommes", desc: "Trois morceaux de poulet pané et frites de pommes", price: 2100, image: "poulet_3morceaux_frites", active: true },
+  { id: "pp-5morceaux", groupId: "poulet-pane", name: "5 Morceaux de Poulet", desc: "Cinq morceaux de poulet pané croustillant, sans accompagnement", price: 2500, image: "poulet_5morceaux", active: true },
+  { id: "pp-5morceaux-frites-mayo", groupId: "poulet-pane", name: "5 Morceaux + Frites/Plantain + Mayo", desc: "Cinq morceaux de poulet pané, frites de pommes ou plantain, mayo", price: 3500, image: "poulet_5_frites_combo", active: true },
+
+  { id: "crepe-viande", groupId: "crepes-salees", name: "Crêpe Viande & Fromage", desc: "Crêpe salée garnie de viande hachée et fromage fondu", price: 1000, image: "crepe_viande", active: true },
+  { id: "crepe-poulet", groupId: "crepes-salees", name: "Crêpe Poulet & Fromage", desc: "Crêpe salée au poulet effiloché et fromage", price: 1000, image: "crepe_poulet", active: true },
+  { id: "crepe-jambon", groupId: "crepes-salees", name: "Crêpe Jambon & Fromage", desc: "Crêpe salée jambon fondant et fromage", price: 1000, image: "crepe_jambon", active: true },
+
+  { id: "nems-x1", groupId: "nems", name: "Nems x1", desc: "Rouleau croustillant fait maison, à l'unité", price: 100, image: "nems_single", active: true },
+  { id: "nems-5", groupId: "nems", name: "Nems x5", desc: "Rouleaux croustillants faits maison, farcis et dorés", price: 500, image: "nems", active: true },
+  { id: "nems-10", groupId: "nems", name: "Nems x10", desc: "Format à partager", price: 1000, image: "nems", active: true },
+  { id: "nems-pack25", groupId: "nems", name: "Pack x25", desc: "Grand format pour évènements et groupes", price: 2400, image: "nems_pack25", active: true },
+
+  { id: "pili-x1", groupId: "pili-pili", name: "Pili Pili x1", desc: "Bouchée épicée et croustillante", price: 100, image: "pili_pili", active: true },
+
+  { id: "frites-pommes", groupId: "frites", name: "Frites de Pommes", desc: "Frites dorées et croustillantes", price: 500, image: "frites_pommes", active: true },
+  { id: "frites-plantain", groupId: "frites", name: "Frites de Plantain", desc: "Plantain mûr frit, doré et fondant", price: 500, image: "frites_plantain", active: true },
+
+  { id: "cupcake-1", groupId: "cupcakes", name: "Cup Cake x1", desc: "Petit gâteau moelleux, glaçage maison", price: 100, image: "cupcake", active: true },
+  { id: "cupcake-5", groupId: "cupcakes", name: "Pack x5", desc: "Idéal pour partager", price: 500, image: "cupcake", active: true },
+
+  { id: "minicake-1", groupId: "minicakes", name: "Mini Cake x1", desc: "Mini gâteau moelleux", price: 250, image: "cupcake", active: true },
+  { id: "minicake-5", groupId: "minicakes", name: "Pack x5", desc: "Pour le partage", price: 1100, image: "cupcake", active: true },
+
+  { id: "crepe-choco", groupId: "crepes-sucrees", name: "Crêpe au Chocolat", desc: "Crêpe sucrée généreusement garnie de chocolat fondu", price: 200, image: "crepe_choco", active: true },
+  { id: "crepe-choco-banane", groupId: "crepes-sucrees", name: "Crêpe Chocolat-Banane", desc: "Chocolat fondant et banane fraîche", price: 250, image: "crepe_choco", active: true },
+
+  { id: "jus-ananas", groupId: "jus", name: "Jus d'Ananas", desc: "Pressé frais, sans additifs", price: 500, image: "jus_ananas", active: true },
+  { id: "jus-orange", groupId: "jus", name: "Jus d'Orange", desc: "Pressé frais, sans additifs", price: 500, image: "jus_orange", active: true },
+  { id: "jus-mixte", groupId: "jus", name: "Jus Mixte", desc: "Mélange de fruits frais de saison", price: 700, image: null, active: true },
+  { id: "jus-baobab", groupId: "jus", name: "Jus de Baobab", desc: "Jus traditionnel rafraîchissant, riche et naturel", price: 500, image: "jus_baobab", active: true },
+];
+
+const COMMISSION_RATE = 0.10;
+const BONUS_EVERY = 10;
+
+/* ============================== HELPERS ============================== */
+const formatFCFA = (n) => `${Math.round(Number(n) || 0).toLocaleString("fr-FR")} FCFA`;
+const genOrderId = () => "MW" + Date.now().toString(36).toUpperCase().slice(-5) + Math.floor(10 + Math.random() * 89);
+const genPartnerCode = (name) => {
+  const initials = name.trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 3) || "MW";
+  return `MW-${initials}${Math.floor(100 + Math.random() * 900)}`;
+};
+const fmtDate = (iso) => {
+  try { return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  catch (e) { return iso; }
+};
+const groupMeta = (id) => GROUPS_META.find((g) => g.id === id) || GROUPS_META[0];
+
+function persist(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch (e) { console.error("Erreur de sauvegarde", key, e); return false; }
+}
+
+/* ============================== SMALL UI PIECES ============================== */
+function ItemThumb({ item, size = 58, rounded = "rounded-xl" }) {
+  const src = img(item.image);
+  const gi = groupMeta(item.groupId);
+  if (src) {
+    return <img src={src} alt={item.name} className={`${rounded} object-cover flex-shrink-0`} style={{ width: size, height: size }} />;
+  }
+  return (
+    <div className={`${rounded} flex items-center justify-center flex-shrink-0`} style={{ width: size, height: size, fontSize: size * 0.42, background: `linear-gradient(135deg, ${PALETTE.creamSoft}, ${PALETTE.goldSoft}66)` }}>
+      {gi.icon}
+    </div>
+  );
+}
+
+function CircularProgress({ value, size = 104, stroke = 9, color = PALETTE.gold, track = PALETTE.creamSoft, label, sublabel }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.min(Math.max(value, 0), 1);
+  const offset = c - pct * c;
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={stroke} fill="none" strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.7s ease" }} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <span className="font-display" style={{ fontSize: size * 0.27, fontWeight: 700, color: PALETTE.ink, lineHeight: 1 }}>{label}</span>
+        {sublabel && <span style={{ fontSize: size * 0.105, color: PALETTE.inkSoft, marginTop: 3, textAlign: "center" }}>{sublabel}</span>}
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, accent = PALETTE.gold, hint }) {
+  return (
+    <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+      <div className="rounded-xl p-2.5 flex items-center justify-center" style={{ background: accent + "1f" }}><Icon size={20} color={accent} /></div>
+      <div className="min-w-0">
+        <p style={{ color: PALETTE.inkSoft, fontSize: 12, letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</p>
+        <p className="font-display" style={{ color: PALETTE.ink, fontSize: 20, fontWeight: 700, marginTop: 2 }}>{value}</p>
+        {hint && <p style={{ color: PALETTE.inkSoft, fontSize: 11, marginTop: 2 }}>{hint}</p>}
+      </div>
+    </div>
+  );
+}
+
+function Eyebrow({ children, dark }) {
+  return (
+    <div className="flex items-center gap-3 mb-2">
+      <span style={{ width: 22, height: 1.5, background: PALETTE.gold }} />
+      <span style={{ color: PALETTE.gold, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600 }}>{children}</span>
+    </div>
+  );
+}
+
+function PrimaryButton({ children, onClick, disabled, full, icon: Icon, tone = "gold" }) {
+  const bg = tone === "gold" ? PALETTE.gold : tone === "dark" ? PALETTE.black : tone === "red" ? PALETTE.red : PALETTE.green;
+  return (
+    <button onClick={onClick} disabled={disabled} className={`rounded-xl px-5 py-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${full ? "w-full" : ""}`} style={{ background: disabled ? PALETTE.border : bg, color: disabled ? PALETTE.inkSoft : "#FFF", fontWeight: 600, fontSize: 14, opacity: disabled ? 0.7 : 1, cursor: disabled ? "not-allowed" : "pointer" }}>
+      {Icon && <Icon size={16} />}{children}
+    </button>
+  );
+}
+
+function GhostButton({ children, onClick, icon: Icon, full }) {
+  return (
+    <button onClick={onClick} className={`rounded-xl px-5 py-3 flex items-center justify-center gap-2 transition-colors ${full ? "w-full" : ""}`} style={{ background: "transparent", border: `1.5px solid ${PALETTE.border}`, color: PALETTE.ink, fontWeight: 600, fontSize: 14 }}>
+      {Icon && <Icon size={16} />}{children}
+    </button>
+  );
+}
+
+function TextField({ label, value, onChange, placeholder, type = "text", icon: Icon }) {
+  return (
+    <label className="block">
+      {label && <span style={{ fontSize: 12, color: PALETTE.inkSoft, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>}
+      <div className="flex items-center gap-2 mt-1.5 rounded-xl px-3.5 py-3" style={{ background: PALETTE.surface, border: `1.5px solid ${PALETTE.border}` }}>
+        {Icon && <Icon size={16} color={PALETTE.inkSoft} />}
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-transparent outline-none" style={{ color: PALETTE.ink, fontSize: 14 }} />
+      </div>
+    </label>
+  );
+}
+
+function Pill({ active, onClick, children, dark }) {
+  return (
+    <button onClick={onClick} className="rounded-full px-4 py-2 whitespace-nowrap transition-colors flex-shrink-0" style={{ background: active ? PALETTE.black : (dark ? "rgba(255,255,255,0.08)" : PALETTE.surface), color: active ? PALETTE.goldSoft : (dark ? PALETTE.creamSoft : PALETTE.ink), border: `1.5px solid ${active ? PALETTE.black : PALETTE.border}`, fontSize: 13.5, fontWeight: 600 }}>
+      {children}
+    </button>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    "Nouvelle": { bg: PALETTE.redSoft, color: PALETTE.red },
+    "En préparation": { bg: PALETTE.goldSoft, color: PALETTE.goldDeep },
+    "Prête": { bg: "#DCEAFB", color: "#2A5C92" },
+    "Livrée": { bg: PALETTE.greenSoft, color: PALETTE.green },
+  };
+  const s = map[status] || map["Nouvelle"];
+  return <span className="rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: s.bg, color: s.color }}>{status}</span>;
+}
+
+function Toast({ message, onClose }) {
+  useEffect(() => { if (!message) return; const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [message]);
+  if (!message) return null;
+  return (
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] rounded-xl px-5 py-3 flex items-center gap-2 shadow-lg" style={{ background: PALETTE.black, color: PALETTE.cream }}>
+      <Check size={16} color={PALETTE.gold} /><span style={{ fontSize: 13.5, fontWeight: 500 }}>{message}</span>
+    </div>
+  );
+}
+
+function useBodyScrollLock() {
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, []);
+}
+
+/* ============================== HEADER ============================== */
+function Header({ view, setView }) {
+  const tabs = [{ id: "menu", label: "Menu" }, { id: "partner", label: "Partenaires" }, { id: "admin", label: "Gestion" }];
+  return (
+    <header style={{ background: PALETTE.black, position: "sticky", top: 0, zIndex: 40 }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <img src={LOGO_DATA_URI} alt="M&W Tastes" style={{ height: 36, width: 36, objectFit: "contain", borderRadius: 8 }} />
+          <div className="leading-none">
+            <p className="font-display" style={{ color: PALETTE.goldSoft, fontWeight: 700, fontSize: 16, letterSpacing: "0.02em" }}>M&amp;W</p>
+            <p className="font-display italic" style={{ color: PALETTE.cream, fontSize: 12, marginTop: -2 }}>Tastes</p>
+          </div>
+        </div>
+        <nav className="flex items-center gap-1 rounded-full p-1" style={{ background: PALETTE.blackSoft }}>
+          {tabs.map((t) => (
+            <button key={t.id} onClick={() => setView(t.id)} className="rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold transition-colors" style={{ background: view === t.id ? PALETTE.gold : "transparent", color: view === t.id ? PALETTE.black : PALETTE.creamSoft }}>
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+/* ============================== MENU / CLIENT VIEW ============================== */
+function MenuView({ menu, orders, partners, settings, onPlaceOrder, notify }) {
+  const [activeCat, setActiveCat] = useState("sale");
+  const groupsInCat = useMemo(() => GROUPS_META.filter((g) => g.category === activeCat), [activeCat]);
+  const [activeGroup, setActiveGroup] = useState(groupsInCat[0]?.id);
+
+  useEffect(() => { setActiveGroup(groupsInCat[0]?.id); }, [activeCat]);
+
+  const [cart, setCart] = useState({});
+  const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [confirmed, setConfirmed] = useState(null);
+  const [trackOpen, setTrackOpen] = useState(false);
+
+  const visibleItems = useMemo(() => menu.filter((m) => m.groupId === activeGroup && m.active !== false), [menu, activeGroup]);
+  const cartItems = useMemo(() => Object.entries(cart).filter(([, q]) => q > 0).map(([id, qty]) => ({ ...menu.find((m) => m.id === id), qty })).filter((i) => i.id), [cart, menu]);
+  const cartTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
+
+  const updateQty = (id, delta) => setCart((c) => ({ ...c, [id]: Math.max(0, (c[id] || 0) + delta) }));
+
+  const handleConfirmOrder = async (form) => {
+    const partner = partners.find((p) => p.code.toLowerCase() === form.partnerCode.trim().toLowerCase());
+    const order = {
+      customerName: form.name, phone: form.phone, orderType: form.orderType,
+      items: cartItems.map((i) => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
+      total: cartTotal, partnerCode: partner ? partner.code : "", note: form.note,
+      deliveryAddress: form.deliveryAddress || "", deliveryCoords: form.deliveryCoords || null,
+      paymentMethod: form.paymentMethod, paid: false,
+    };
+    const saved = await onPlaceOrder(order);
+    setConfirmed(saved); setCart({}); setCheckoutOpen(false); setCartOpen(false);
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* blurred burger background */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, backgroundImage: `url(${img("bg_burger")})`, backgroundSize: "cover", backgroundPosition: "center 35%", filter: "blur(9px) brightness(0.95)", transform: "scale(1.12)" }} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, background: PALETTE.cream, opacity: 0.74 }} />
+
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {/* Hero */}
+        <div className="px-4 sm:px-6 pt-8 pb-7" style={{ background: PALETTE.black }}>
+          <div className="max-w-5xl mx-auto">
+            <Eyebrow>Carte digitale · Yaoundé</Eyebrow>
+            <h1 className="font-display" style={{ color: PALETTE.cream, fontSize: 30, fontWeight: 700, maxWidth: 480, lineHeight: 1.15 }}>Goûts modernes, commande digitalisée.</h1>
+            <p style={{ color: PALETTE.inkSoft, marginTop: 8, fontSize: 13.5, maxWidth: 420 }}>Choisissez une catégorie, puis une formule. Ajoutez le code d'un partenaire si vous en avez un.</p>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4">
+              <button onClick={() => setTrackOpen(true)} className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: PALETTE.gold }}>Suivre une commande <ChevronRight size={15} /></button>
+              {settings.serviceTel && (
+                <a href={`tel:${settings.serviceTel.replace(/\s+/g, "")}`} className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: PALETTE.creamSoft }}>
+                  <Phone size={14} color={PALETTE.gold} /> {settings.serviceTel}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Category pills */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-4">
+          <div className="rounded-2xl p-2 flex gap-2 overflow-x-auto scrollbar-thin" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+            {CATEGORIES.map((c) => <Pill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>{c.icon} {c.label}</Pill>)}
+          </div>
+        </div>
+
+        {/* Group tabs (like "Nos Burgers" sidebar, adapted to horizontal scroll) */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-3.5">
+          <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+            {groupsInCat.map((g) => (
+              <button key={g.id} onClick={() => setActiveGroup(g.id)} className="rounded-xl px-3.5 py-2.5 flex items-center gap-1.5 flex-shrink-0 transition-colors" style={{ background: activeGroup === g.id ? PALETTE.black : PALETTE.surface, color: activeGroup === g.id ? PALETTE.goldSoft : PALETTE.ink, border: `1.5px solid ${activeGroup === g.id ? PALETTE.black : PALETTE.border}`, fontSize: 13, fontWeight: 700 }}>
+                <span>{g.icon}</span>{g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Variant cards for selected group */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 pb-28">
+          <p className="font-display" style={{ fontSize: 17, fontWeight: 700, color: PALETTE.ink, marginBottom: 12 }}>
+            {groupMeta(activeGroup).icon} {groupMeta(activeGroup).label}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {visibleItems.map((item) => {
+              const qty = cart[item.id] || 0;
+              const src = img(item.image);
+              return (
+                <div key={item.id} className="rounded-2xl overflow-hidden" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+                  <div style={{ height: 140, position: "relative" }}>
+                    {src ? (
+                      <img src={src} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${PALETTE.creamSoft}, ${PALETTE.goldSoft}80)`, fontSize: 44 }}>
+                        {groupMeta(item.groupId).icon}
+                      </div>
+                    )}
+                    <span className="absolute top-2.5 right-2.5 rounded-full px-2.5 py-1" style={{ background: PALETTE.black, color: PALETTE.goldSoft, fontSize: 12.5, fontWeight: 700 }}>{formatFCFA(item.price)}</span>
+                  </div>
+                  <div className="p-3.5">
+                    <p className="font-display" style={{ color: PALETTE.ink, fontWeight: 700, fontSize: 14.5 }}>{item.name}</p>
+                    <p style={{ color: PALETTE.inkSoft, fontSize: 12, marginTop: 3, lineHeight: 1.4, minHeight: 32 }}>{item.desc}</p>
+                    <div className="flex items-center justify-end mt-2">
+                      {qty === 0 ? (
+                        <button onClick={() => updateQty(item.id, 1)} className="rounded-lg px-3.5 py-2 flex items-center gap-1.5 w-full justify-center" style={{ background: PALETTE.black, color: PALETTE.goldSoft, fontSize: 12.5, fontWeight: 600 }}>
+                          <Plus size={14} /> Ajouter au panier
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 rounded-lg w-full px-2 py-1" style={{ background: PALETTE.black }}>
+                          <button onClick={() => updateQty(item.id, -1)} className="p-1.5"><Minus size={14} color={PALETTE.cream} /></button>
+                          <span style={{ color: PALETTE.goldSoft, fontWeight: 700, fontSize: 13.5 }}>{qty}</span>
+                          <button onClick={() => updateQty(item.id, 1)} className="p-1.5"><Plus size={14} color={PALETTE.cream} /></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {visibleItems.length === 0 && <p style={{ color: PALETTE.inkSoft, fontSize: 13.5 }} className="col-span-2 text-center py-10">Aucun article disponible pour cette formule actuellement.</p>}
+          </div>
+        </div>
+
+        {cartCount > 0 && !cartOpen && !checkoutOpen && (
+          <button onClick={() => setCartOpen(true)} className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[440px] rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl z-30" style={{ background: PALETTE.black }}>
+            <span className="flex items-center gap-2" style={{ color: PALETTE.cream, fontSize: 13.5, fontWeight: 600 }}><ShoppingCart size={17} color={PALETTE.gold} /> {cartCount} article{cartCount > 1 ? "s" : ""}</span>
+            <span className="flex items-center gap-1.5" style={{ color: PALETTE.goldSoft, fontWeight: 700, fontSize: 14 }}>{formatFCFA(cartTotal)} <ChevronRight size={16} /></span>
+          </button>
+        )}
+
+        {cartOpen && <CartDrawer items={cartItems} total={cartTotal} onClose={() => setCartOpen(false)} onUpdateQty={updateQty} onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }} />}
+        {checkoutOpen && <CheckoutModal items={cartItems} total={cartTotal} partners={partners} settings={settings} onClose={() => setCheckoutOpen(false)} onConfirm={handleConfirmOrder} />}
+        {confirmed && <OrderConfirmation order={confirmed} settings={settings} onClose={() => setConfirmed(null)} />}
+        {trackOpen && <TrackOrderModal orders={orders} onClose={() => setTrackOpen(false)} />}
+      </div>
+    </div>
+  );
+}
+
+function CartDrawer({ items, total, onClose, onUpdateQty, onCheckout }) {
+  useBodyScrollLock();
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center" style={{ background: "rgba(21,18,14,0.55)" }} onClick={onClose}>
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] flex flex-col" style={{ background: PALETTE.cream }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display" style={{ fontSize: 19, fontWeight: 700, color: PALETTE.ink }}>Votre panier</h2>
+          <button onClick={onClose}><X size={20} color={PALETTE.inkSoft} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto space-y-2.5 scrollbar-thin" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+          {items.length === 0 && <p style={{ color: PALETTE.inkSoft, fontSize: 13.5 }}>Votre panier est vide.</p>}
+          {items.map((i) => (
+            <div key={i.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+              <ItemThumb item={i} size={44} rounded="rounded-lg" />
+              <div className="flex-1 min-w-0">
+                <p style={{ fontSize: 13.5, fontWeight: 600, color: PALETTE.ink }}>{i.name}</p>
+                <p style={{ fontSize: 12, color: PALETTE.inkSoft }}>{formatFCFA(i.price)} × {i.qty}</p>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg" style={{ background: PALETTE.creamSoft }}>
+                <button onClick={() => onUpdateQty(i.id, -1)} className="p-1.5"><Minus size={13} color={PALETTE.ink} /></button>
+                <span style={{ fontSize: 12.5, fontWeight: 700, minWidth: 12, textAlign: "center" }}>{i.qty}</span>
+                <button onClick={() => onUpdateQty(i.id, 1)} className="p-1.5"><Plus size={13} color={PALETTE.ink} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {items.length > 0 && (
+          <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${PALETTE.border}` }}>
+            <div className="flex items-center justify-between mb-3"><span style={{ fontSize: 13.5, color: PALETTE.inkSoft, fontWeight: 600 }}>Total</span><span className="font-display" style={{ fontSize: 19, fontWeight: 700, color: PALETTE.goldDeep }}>{formatFCFA(total)}</span></div>
+            <PrimaryButton full onClick={onCheckout}>Passer la commande</PrimaryButton>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CheckoutModal({ items, total, partners, settings, onClose, onConfirm }) {
+  useBodyScrollLock();
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [orderType, setOrderType] = useState("emporter");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryCoords, setDeliveryCoords] = useState(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("especes");
+  const [partnerCode, setPartnerCode] = useState("");
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const matchedPartner = partners.find((p) => p.code.toLowerCase() === partnerCode.trim().toLowerCase());
+  const canSubmit = name.trim().length > 1 && phone.trim().length > 5 && (orderType !== "livraison" || deliveryAddress.trim().length > 3);
+
+  const locateMe = () => {
+    if (!navigator.geolocation) { setLocationError("La géolocalisation n'est pas disponible sur cet appareil."); return; }
+    setLocating(true); setLocationError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setDeliveryCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false); },
+      () => { setLocationError("Position indisponible — merci d'indiquer votre adresse manuellement."); setLocating(false); },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    await onConfirm({ name, phone, orderType, partnerCode, note, deliveryAddress, deliveryCoords, paymentMethod });
+    setSubmitting(false);
+  };
+
+  const paymentInfo = {
+    mtn: settings.mtnNumber ? `Envoyez le montant au ${settings.mtnNumber} (MTN MoMo), puis présentez l'ID de transaction au retrait.` : "Numéro MTN MoMo non encore configuré — l'équipe vous contactera pour finaliser le paiement.",
+    orange: settings.orangeNumber ? `Envoyez le montant au ${settings.orangeNumber} (Orange Money), puis présentez l'ID de transaction au retrait.` : "Numéro Orange Money non encore configuré — l'équipe vous contactera pour finaliser le paiement.",
+    banque: settings.bankDetails ? settings.bankDetails : "Coordonnées bancaires non encore configurées — l'équipe vous contactera pour finaliser le paiement.",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "rgba(21,18,14,0.55)", WebkitOverflowScrolling: "touch" }}>
+      <div className="min-h-full flex items-end sm:items-center justify-center">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5" style={{ background: PALETTE.cream }}>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={onClose} className="flex items-center gap-1 text-sm font-semibold" style={{ color: PALETTE.inkSoft }}><ArrowLeft size={16} /> Retour</button>
+          <h2 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: PALETTE.ink }}>Finaliser</h2>
+          <span style={{ width: 50 }} />
+        </div>
+        <div className="space-y-3.5">
+          <TextField label="Nom complet" value={name} onChange={setName} placeholder="Ex. Aïcha Mballa" icon={User} />
+          <TextField label="Téléphone" value={phone} onChange={setPhone} placeholder="Ex. 6 99 00 00 00" icon={Phone} type="tel" />
+
+          <div>
+            <span style={{ fontSize: 12, color: PALETTE.inkSoft, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode de réception</span>
+            <div className="flex gap-2 mt-1.5">
+              {ORDER_TYPES.map((t) => (
+                <button key={t.id} onClick={() => setOrderType(t.id)} className="flex-1 rounded-xl py-2.5 flex flex-col items-center justify-center gap-1" style={{ background: orderType === t.id ? PALETTE.black : PALETTE.surface, color: orderType === t.id ? PALETTE.goldSoft : PALETTE.ink, border: `1.5px solid ${orderType === t.id ? PALETTE.black : PALETTE.border}` }}>
+                  <t.icon size={15} />
+                  <span style={{ fontSize: 11.5, fontWeight: 600 }}>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {orderType === "livraison" && (
+            <div className="rounded-xl p-3.5 space-y-2.5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+              <TextField label="Adresse de livraison" value={deliveryAddress} onChange={setDeliveryAddress} placeholder="Quartier, repère, rue..." icon={MapPin} />
+              <button onClick={locateMe} disabled={locating} className="w-full rounded-lg py-2.5 flex items-center justify-center gap-2" style={{ background: PALETTE.creamSoft, color: PALETTE.goldDeep, fontSize: 12.5, fontWeight: 700 }}>
+                {locating ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                {locating ? "Localisation en cours..." : deliveryCoords ? "Position GPS enregistrée ✓" : "Utiliser ma position GPS"}
+              </button>
+              {locationError && <p style={{ fontSize: 11.5, color: PALETTE.red }}>{locationError}</p>}
+              <p style={{ fontSize: 11, color: PALETTE.inkSoft }}>La position GPS aide le livreur à vous trouver plus vite, en complément de l'adresse.</p>
+            </div>
+          )}
+
+          <div>
+            <span style={{ fontSize: 12, color: PALETTE.inkSoft, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode de paiement</span>
+            <div className="grid grid-cols-2 gap-2 mt-1.5">
+              {PAYMENT_METHODS.map((m) => (
+                <button key={m.id} onClick={() => setPaymentMethod(m.id)} className="rounded-xl py-2.5 px-2 text-left" style={{ background: paymentMethod === m.id ? PALETTE.black : PALETTE.surface, color: paymentMethod === m.id ? PALETTE.goldSoft : PALETTE.ink, border: `1.5px solid ${paymentMethod === m.id ? PALETTE.black : PALETTE.border}` }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 700 }}>{m.label}</p>
+                  <p style={{ fontSize: 10.5, opacity: 0.75 }}>{m.hint}</p>
+                </button>
+              ))}
+            </div>
+            {paymentMethod !== "especes" && (
+              <p className="mt-2 rounded-lg p-2.5" style={{ background: PALETTE.creamSoft, fontSize: 11.5, color: PALETTE.ink, lineHeight: 1.4 }}>{paymentInfo[paymentMethod]}</p>
+            )}
+          </div>
+
+          <TextField label="Code partenaire (facultatif)" value={partnerCode} onChange={setPartnerCode} placeholder="Ex. MW-AB123" icon={Percent} />
+          {partnerCode.trim() && <p className="flex items-center gap-1.5 -mt-2" style={{ fontSize: 12, color: matchedPartner ? PALETTE.green : PALETTE.red }}>{matchedPartner ? <BadgeCheck size={14} /> : <AlertCircle size={14} />}{matchedPartner ? `Code valide — ${matchedPartner.name}` : "Code introuvable, la commande sera enregistrée sans commission"}</p>}
+          <TextField label="Note pour la cuisine (facultatif)" value={note} onChange={setNote} placeholder="Ex. sans oignon" />
+          <div className="rounded-xl p-3.5 space-y-1.5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+            {items.map((i) => <div key={i.id} className="flex justify-between" style={{ fontSize: 12.5, color: PALETTE.inkSoft }}><span>{i.qty} × {i.name}</span><span>{formatFCFA(i.price * i.qty)}</span></div>)}
+            <div className="flex justify-between pt-1.5 mt-1.5" style={{ borderTop: `1px solid ${PALETTE.border}`, fontSize: 14, fontWeight: 700, color: PALETTE.ink }}><span>Total</span><span style={{ color: PALETTE.goldDeep }}>{formatFCFA(total)}</span></div>
+          </div>
+          <PrimaryButton full disabled={!canSubmit || submitting} onClick={handleSubmit} icon={submitting ? Loader2 : Check}>{submitting ? "Envoi..." : "Confirmer la commande"}</PrimaryButton>
+          {settings.serviceTel && <p style={{ fontSize: 11, color: PALETTE.inkSoft, textAlign: "center" }}>Une question ? Appelez le {settings.serviceTel}</p>}
+        </div>
+      </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderConfirmation({ order, settings, onClose }) {
+  useBodyScrollLock();
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(21,18,14,0.6)" }}>
+      <div className="w-full sm:max-w-sm rounded-3xl p-6 text-center" style={{ background: PALETTE.cream }}>
+        <div className="mx-auto mb-3 rounded-full flex items-center justify-center" style={{ width: 56, height: 56, background: PALETTE.greenSoft }}><Check size={26} color={PALETTE.green} /></div>
+        <h2 className="font-display" style={{ fontSize: 19, fontWeight: 700, color: PALETTE.ink }}>Commande envoyée !</h2>
+        <p style={{ fontSize: 13, color: PALETTE.inkSoft, marginTop: 4 }}>Conservez ce numéro pour suivre votre commande.</p>
+        <div className="rounded-xl py-3 my-4" style={{ background: PALETTE.black }}><p className="font-display" style={{ color: PALETTE.goldSoft, fontWeight: 700, fontSize: 20, letterSpacing: "0.05em" }}>{order.id}</p></div>
+        <p style={{ fontSize: 13, color: PALETTE.ink }}>Total : <b>{formatFCFA(order.total)}</b></p>
+        {order.orderType === "livraison" && <p style={{ fontSize: 12, color: PALETTE.inkSoft, marginTop: 4 }}>Livraison à : {order.deliveryAddress}</p>}
+        {order.partnerCode && <p style={{ fontSize: 12, color: PALETTE.green, marginTop: 4 }}>Code partenaire {order.partnerCode} appliqué — merci !</p>}
+        <div className="mt-4 space-y-2">
+          <PrimaryButton full onClick={onClose}>Fermer</PrimaryButton>
+          {settings?.serviceTel && <GhostButton full icon={Phone} onClick={() => { window.location.href = `tel:${settings.serviceTel.replace(/\s+/g, "")}`; }}>Appeler le service client</GhostButton>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrackOrderModal({ orders, onClose }) {
+  useBodyScrollLock();
+  const [id, setId] = useState("");
+  const [result, setResult] = useState(undefined);
+  const search = () => { const found = orders.find((o) => o.id.toLowerCase() === id.trim().toLowerCase()); setResult(found || null); };
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center" style={{ background: "rgba(21,18,14,0.55)" }}>
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-5" style={{ background: PALETTE.cream }}>
+        <div className="flex items-center justify-between mb-4"><h2 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: PALETTE.ink }}>Suivre ma commande</h2><button onClick={onClose}><X size={20} color={PALETTE.inkSoft} /></button></div>
+        <TextField label="Numéro de commande" value={id} onChange={setId} placeholder="Ex. MW1A2B345" icon={Search} />
+        <div className="mt-3"><PrimaryButton full onClick={search}>Rechercher</PrimaryButton></div>
+        {result === null && <p style={{ fontSize: 13, color: PALETTE.red, marginTop: 12 }}>Aucune commande trouvée avec ce numéro.</p>}
+        {result && (
+          <div className="rounded-xl p-4 mt-4" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+            <div className="flex items-center justify-between mb-2"><span style={{ fontSize: 13, fontWeight: 700 }}>{result.id}</span><StatusBadge status={result.status} /></div>
+            <p style={{ fontSize: 12, color: PALETTE.inkSoft }}>{fmtDate(result.createdAt)} · {formatFCFA(result.total)}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================== PARTNER VIEW ============================== */
+function PartnerView({ partners, orders, onAddPartner, notify }) {
+  const [mode, setMode] = useState("intro");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loginCode, setLoginCode] = useState("");
+  const [activeCode, setActiveCode] = useState(null);
+  const [error, setError] = useState("");
+  const activePartner = partners.find((p) => p.code === activeCode);
+
+  const handleSignup = async () => {
+    if (name.trim().length < 2 || phone.trim().length < 6) { setError("Merci de renseigner votre nom et un numéro valide."); return; }
+    const code = genPartnerCode(name);
+    const partner = await onAddPartner({ code, name: name.trim(), phone: phone.trim() });
+    setActiveCode(partner.code); setMode("dashboard"); notify("Bienvenue dans le programme partenaires !");
+  };
+  const handleLogin = () => {
+    const found = partners.find((p) => p.code.toLowerCase() === loginCode.trim().toLowerCase());
+    if (!found) { setError("Code introuvable. Vérifiez et réessayez."); return; }
+    setActiveCode(found.code); setMode("dashboard");
+  };
+
+  if (mode === "dashboard" && activePartner) return <PartnerDashboard partner={activePartner} orders={orders} onLogout={() => { setActiveCode(null); setMode("intro"); }} notify={notify} />;
+
+  return (
+    <div style={{ background: PALETTE.cream, minHeight: "100%" }}>
+      <div className="px-4 sm:px-6 pt-8 pb-9" style={{ background: PALETTE.black }}>
+        <div className="max-w-3xl mx-auto">
+          <Eyebrow>Programme partenaires</Eyebrow>
+          <h1 className="font-display" style={{ color: PALETTE.cream, fontSize: 27, fontWeight: 700, maxWidth: 460, lineHeight: 1.2 }}>Partagez M&amp;W Tastes, gagnez à chaque commande.</h1>
+          <div className="flex flex-wrap gap-4 mt-5">
+            <div className="flex items-center gap-2"><Percent size={16} color={PALETTE.gold} /><span style={{ color: PALETTE.creamSoft, fontSize: 13 }}>10% de commission par vente</span></div>
+            <div className="flex items-center gap-2"><Gift size={16} color={PALETTE.gold} /><span style={{ color: PALETTE.creamSoft, fontSize: 13 }}>Un pack offert tous les {BONUS_EVERY} ventes</span></div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-5 pb-12">
+        <div className="rounded-2xl p-5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          {mode === "intro" && (
+            <div className="grid sm:grid-cols-2 gap-3">
+              <button onClick={() => { setMode("signup"); setError(""); }} className="rounded-xl p-4 text-left" style={{ background: PALETTE.black }}><p style={{ color: PALETTE.goldSoft, fontWeight: 700, fontSize: 14.5 }}>Devenir partenaire</p><p style={{ color: PALETTE.inkSoft, fontSize: 12, marginTop: 3 }}>Créez votre code personnel en 30 secondes.</p></button>
+              <button onClick={() => { setMode("login"); setError(""); }} className="rounded-xl p-4 text-left" style={{ background: PALETTE.creamSoft, border: `1px solid ${PALETTE.border}` }}><p style={{ color: PALETTE.ink, fontWeight: 700, fontSize: 14.5 }}>J'ai déjà un code</p><p style={{ color: PALETTE.inkSoft, fontSize: 12, marginTop: 3 }}>Accédez à votre espace partenaire.</p></button>
+            </div>
+          )}
+          {mode === "signup" && (
+            <div className="space-y-3.5">
+              <button onClick={() => setMode("intro")} className="flex items-center gap-1 text-sm font-semibold" style={{ color: PALETTE.inkSoft }}><ArrowLeft size={15} /> Retour</button>
+              <TextField label="Nom complet" value={name} onChange={setName} placeholder="Ex. Junior Etoa" icon={User} />
+              <TextField label="Téléphone" value={phone} onChange={setPhone} placeholder="Ex. 6 99 00 00 00" icon={Phone} type="tel" />
+              {error && <p style={{ color: PALETTE.red, fontSize: 12.5 }}>{error}</p>}
+              <PrimaryButton full onClick={handleSignup}>Créer mon code partenaire</PrimaryButton>
+            </div>
+          )}
+          {mode === "login" && (
+            <div className="space-y-3.5">
+              <button onClick={() => setMode("intro")} className="flex items-center gap-1 text-sm font-semibold" style={{ color: PALETTE.inkSoft }}><ArrowLeft size={15} /> Retour</button>
+              <TextField label="Votre code partenaire" value={loginCode} onChange={setLoginCode} placeholder="Ex. MW-AB123" icon={Percent} />
+              {error && <p style={{ color: PALETTE.red, fontSize: 12.5 }}>{error}</p>}
+              <PrimaryButton full onClick={handleLogin}>Accéder à mon espace</PrimaryButton>
+            </div>
+          )}
+        </div>
+        <div className="mt-5 rounded-2xl p-5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          <p className="font-display" style={{ fontWeight: 700, fontSize: 14.5, color: PALETTE.ink, marginBottom: 8 }}>Comment ça marche</p>
+          <ol className="space-y-2">
+            {["Recevez votre code personnel", "Partagez-le à vos contacts ou sur les réseaux", "Vos filleuls l'indiquent à la commande", "Vous touchez 10% automatiquement"].map((s, i) => (
+              <li key={i} className="flex items-start gap-2.5"><span className="rounded-full flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, background: PALETTE.creamSoft, color: PALETTE.goldDeep, fontSize: 11, fontWeight: 700 }}>{i + 1}</span><span style={{ fontSize: 13, color: PALETTE.inkSoft }}>{s}</span></li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartnerDashboard({ partner, orders, onLogout, notify }) {
+  const myOrders = orders.filter((o) => o.partnerCode === partner.code);
+  const salesCount = myOrders.length;
+  const totalCommission = myOrders.reduce((s, o) => s + o.total * COMMISSION_RATE, 0);
+  const paid = partner.commissionPaid || 0;
+  const due = Math.max(0, totalCommission - paid);
+  const packsEarned = Math.floor(salesCount / BONUS_EVERY);
+  const packsRedeemed = partner.packsRedeemed || 0;
+  const packsAvailable = Math.max(0, packsEarned - packsRedeemed);
+  const progressInCycle = (salesCount % BONUS_EVERY) / BONUS_EVERY;
+  const copyCode = () => { try { navigator.clipboard.writeText(partner.code); notify("Code copié !"); } catch (e) { notify(partner.code); } };
+
+  return (
+    <div style={{ background: PALETTE.cream, minHeight: "100%" }}>
+      <div className="px-4 sm:px-6 pt-7 pb-8" style={{ background: PALETTE.black }}>
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div><Eyebrow>Espace partenaire</Eyebrow><h1 className="font-display" style={{ color: PALETTE.cream, fontSize: 22, fontWeight: 700 }}>Bonjour, {partner.name.split(" ")[0]}</h1></div>
+          <button onClick={onLogout} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: PALETTE.creamSoft }}><LogOut size={14} /> Quitter</button>
+        </div>
+      </div>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-5 pb-12 space-y-4">
+        <div className="rounded-2xl p-5 flex items-center justify-between gap-3" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          <div><p style={{ fontSize: 11, color: PALETTE.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Votre code</p><p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: PALETTE.goldDeep, letterSpacing: "0.04em" }}>{partner.code}</p></div>
+          <GhostButton icon={Copy} onClick={copyCode}>Copier</GhostButton>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard icon={TrendingUp} label="Ventes" value={salesCount} accent={PALETTE.gold} />
+          <StatCard icon={Wallet} label="Commission gagnée" value={formatFCFA(totalCommission)} accent={PALETTE.green} />
+          <StatCard icon={Check} label="Déjà versé" value={formatFCFA(paid)} accent={PALETTE.inkSoft} />
+          <StatCard icon={Clock} label="En attente" value={formatFCFA(due)} accent={PALETTE.red} />
+        </div>
+        <div className="rounded-2xl p-5 flex items-center gap-5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          <CircularProgress value={progressInCycle} label={`${salesCount % BONUS_EVERY}/${BONUS_EVERY}`} sublabel="ventes" />
+          <div>
+            <p className="font-display" style={{ fontWeight: 700, fontSize: 15, color: PALETTE.ink }}>Prochain pack offert</p>
+            <p style={{ fontSize: 12.5, color: PALETTE.inkSoft, marginTop: 3 }}>Un pack ou une offre exclusive M&amp;W Tastes tous les {BONUS_EVERY} ventes réalisées.</p>
+            {packsAvailable > 0 ? <p className="flex items-center gap-1.5 mt-2" style={{ color: PALETTE.green, fontWeight: 700, fontSize: 13 }}><Gift size={15} /> {packsAvailable} pack{packsAvailable > 1 ? "s" : ""} à récupérer auprès du gérant</p> : <p style={{ color: PALETTE.inkSoft, fontSize: 12, marginTop: 6 }}>Encore {BONUS_EVERY - (salesCount % BONUS_EVERY)} vente(s) avant le prochain pack.</p>}
+          </div>
+        </div>
+        <div className="rounded-2xl p-5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          <p className="font-display" style={{ fontWeight: 700, fontSize: 14.5, color: PALETTE.ink, marginBottom: 10 }}>Historique de vos ventes</p>
+          {myOrders.length === 0 && <p style={{ fontSize: 13, color: PALETTE.inkSoft }}>Aucune vente avec votre code pour le moment. Partagez-le pour commencer à gagner !</p>}
+          <div className="space-y-2">
+            {myOrders.slice(0, 8).map((o) => (
+              <div key={o.id} className="flex items-center justify-between" style={{ fontSize: 12.5 }}><span style={{ color: PALETTE.inkSoft }}>{fmtDate(o.createdAt)}</span><span style={{ color: PALETTE.ink, fontWeight: 600 }}>{formatFCFA(o.total)}</span><span style={{ color: PALETTE.green, fontWeight: 600 }}>+{formatFCFA(o.total * COMMISSION_RATE)}</span></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== ADMIN VIEW ============================== */
+function AdminView({ menu, orders, partners, settings, onUpdateOrderStatus, onTogglePaid, onUpdateSettings, onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem, onMarkPartnerPaid, onRedeemPack, onExportData, onImportData, notify }) {
+  const [authed, setAuthed] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [tab, setTab] = useState("overview");
+  const adminPin = settings.adminPin || "2025";
+  const tryLogin = () => { if (pinInput === adminPin) { setAuthed(true); setPinError(""); } else setPinError("Code incorrect."); };
+
+  if (!authed) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4" style={{ background: PALETTE.cream }}>
+        <div className="w-full max-w-xs rounded-2xl p-6 text-center" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          <div className="mx-auto mb-3 rounded-full flex items-center justify-center" style={{ width: 50, height: 50, background: PALETTE.black }}><Lock size={20} color={PALETTE.gold} /></div>
+          <p className="font-display" style={{ fontWeight: 700, fontSize: 17, color: PALETTE.ink }}>Espace de gestion</p>
+          <p style={{ fontSize: 12, color: PALETTE.inkSoft, marginTop: 3, marginBottom: 14 }}>Réservé au gérant de M&amp;W Tastes</p>
+          <TextField value={pinInput} onChange={setPinInput} placeholder="Code PIN" type="password" />
+          {pinError && <p style={{ color: PALETTE.red, fontSize: 12, marginTop: 6 }}>{pinError}</p>}
+          <div className="mt-3"><PrimaryButton full onClick={tryLogin}>Entrer</PrimaryButton></div>
+          <p style={{ fontSize: 10.5, color: PALETTE.inkSoft, marginTop: 10 }}>Code par défaut : 2025 — à changer dans Paramètres.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: "overview", label: "Vue d'ensemble", icon: TrendingUp },
+    { id: "orders", label: "Commandes", icon: ClipboardList },
+    { id: "partners", label: "Partenaires", icon: Users },
+    { id: "menu", label: "Menu", icon: ChefHat },
+    { id: "settings", label: "Réglages", icon: Settings },
+  ];
+
+  return (
+    <div style={{ background: PALETTE.cream, minHeight: "100%" }}>
+      <div className="px-4 sm:px-6 pt-6 pb-4" style={{ background: PALETTE.black }}>
+        <div className="max-w-5xl mx-auto"><Eyebrow>Gestion interne</Eyebrow><h1 className="font-display" style={{ color: PALETTE.cream, fontSize: 22, fontWeight: 700 }}>Tableau de bord</h1></div>
+      </div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-thin -mt-3 mb-5 pb-1">
+          {tabs.map((t) => <button key={t.id} onClick={() => setTab(t.id)} className="rounded-xl px-3.5 py-2.5 flex items-center gap-1.5 whitespace-nowrap" style={{ background: tab === t.id ? PALETTE.black : PALETTE.surface, color: tab === t.id ? PALETTE.goldSoft : PALETTE.ink, border: `1px solid ${tab === t.id ? PALETTE.black : PALETTE.border}`, fontSize: 12.5, fontWeight: 600 }}><t.icon size={14} /> {t.label}</button>)}
+        </div>
+        <div className="pb-12">
+          {tab === "overview" && <AdminOverview orders={orders} partners={partners} />}
+          {tab === "orders" && <AdminOrders orders={orders} onUpdateOrderStatus={onUpdateOrderStatus} onTogglePaid={onTogglePaid} />}
+          {tab === "partners" && <AdminPartners partners={partners} orders={orders} onMarkPartnerPaid={onMarkPartnerPaid} onRedeemPack={onRedeemPack} />}
+          {tab === "menu" && <AdminMenu menu={menu} onAddMenuItem={onAddMenuItem} onUpdateMenuItem={onUpdateMenuItem} onDeleteMenuItem={onDeleteMenuItem} notify={notify} />}
+          {tab === "settings" && <AdminSettings settings={settings} onUpdateSettings={onUpdateSettings} onExportData={onExportData} onImportData={onImportData} notify={notify} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminOverview({ orders, partners }) {
+  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+  const totalCommissions = orders.filter((o) => o.partnerCode).reduce((s, o) => s + o.total * COMMISSION_RATE, 0);
+  const paidOut = partners.reduce((s, p) => s + (p.commissionPaid || 0), 0);
+  const today = new Date().toDateString();
+  const ordersToday = orders.filter((o) => new Date(o.createdAt).toDateString() === today).length;
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={Wallet} label="Revenu total" value={formatFCFA(totalRevenue)} accent={PALETTE.gold} />
+        <StatCard icon={ClipboardList} label="Commandes" value={orders.length} hint={`${ordersToday} aujourd'hui`} accent={PALETTE.green} />
+        <StatCard icon={Users} label="Partenaires" value={partners.length} accent={PALETTE.terracotta} />
+        <StatCard icon={Percent} label="Commissions dues" value={formatFCFA(totalCommissions - paidOut)} accent={PALETTE.red} />
+      </div>
+      <div className="rounded-2xl p-5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+        <p className="font-display" style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 10 }}>Dernières commandes</p>
+        {orders.length === 0 && <p style={{ fontSize: 13, color: PALETTE.inkSoft }}>Aucune commande pour le moment.</p>}
+        <div className="space-y-2">{orders.slice(0, 6).map((o) => <div key={o.id} className="flex items-center justify-between text-sm"><span style={{ color: PALETTE.ink, fontWeight: 600 }}>{o.customerName}</span><span style={{ color: PALETTE.inkSoft, fontSize: 12 }}>{fmtDate(o.createdAt)}</span><StatusBadge status={o.status} /></div>)}</div>
+      </div>
+    </div>
+  );
+}
+
+function AdminOrders({ orders, onUpdateOrderStatus, onTogglePaid }) {
+  const statuses = ["Nouvelle", "En préparation", "Prête", "Livrée"];
+  const typeLabel = (id) => ORDER_TYPES.find((t) => t.id === id)?.label || id;
+  const payLabel = (id) => PAYMENT_METHODS.find((p) => p.id === id)?.label || "Espèces";
+  if (orders.length === 0) return <p style={{ fontSize: 13, color: PALETTE.inkSoft }}>Aucune commande enregistrée pour le moment.</p>;
+  return (
+    <div className="space-y-3">
+      {orders.map((o) => (
+        <div key={o.id} className="rounded-2xl p-4" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div><p style={{ fontWeight: 700, fontSize: 14, color: PALETTE.ink }}>{o.id} · {o.customerName}</p><p style={{ fontSize: 12, color: PALETTE.inkSoft }}>{o.phone} · {fmtDate(o.createdAt)} · {typeLabel(o.orderType)}</p></div>
+            <select value={o.status} onChange={(e) => onUpdateOrderStatus(o.id, e.target.value)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold" style={{ border: `1.5px solid ${PALETTE.border}`, color: PALETTE.ink, background: PALETTE.cream }}>{statuses.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+          </div>
+
+          {o.orderType === "livraison" && (
+            <div className="mt-2 rounded-lg p-2.5 flex items-start gap-2" style={{ background: PALETTE.creamSoft }}>
+              <MapPin size={14} color={PALETTE.terracotta} className="flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p style={{ fontSize: 12, color: PALETTE.ink }}>{o.deliveryAddress || "Adresse non précisée"}</p>
+                {o.deliveryCoords && <a href={`https://www.google.com/maps?q=${o.deliveryCoords.lat},${o.deliveryCoords.lng}`} target="_blank" rel="noreferrer" className="text-xs font-semibold inline-flex items-center gap-1 mt-1" style={{ color: PALETTE.goldDeep }}><Navigation size={11} /> Voir la position GPS sur la carte</a>}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-2.5 flex flex-wrap gap-1.5">{o.items.map((i, idx) => <span key={idx} className="rounded-full px-2.5 py-1" style={{ background: PALETTE.creamSoft, fontSize: 11.5, color: PALETTE.ink }}>{i.qty}× {i.name}</span>)}</div>
+
+          <div className="flex items-center justify-between mt-2.5 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 13, fontWeight: 700, color: PALETTE.goldDeep }}>{formatFCFA(o.total)}</span>
+              <span className="rounded-full px-2 py-0.5" style={{ background: PALETTE.creamSoft, fontSize: 11, color: PALETTE.ink, fontWeight: 600 }}>{payLabel(o.paymentMethod)}</span>
+              {o.partnerCode && <span style={{ fontSize: 11.5, color: PALETTE.green, fontWeight: 600 }}>Partenaire {o.partnerCode}</span>}
+            </div>
+            <button onClick={() => onTogglePaid(o.id)} className="rounded-lg px-2.5 py-1 flex items-center gap-1" style={{ background: o.paid ? PALETTE.greenSoft : PALETTE.redSoft, color: o.paid ? PALETTE.green : PALETTE.red, fontSize: 11, fontWeight: 700 }}>
+              <Check size={12} /> {o.paid ? "Payé" : "Marquer payé"}
+            </button>
+          </div>
+          {o.note && <p style={{ fontSize: 11.5, color: PALETTE.inkSoft, marginTop: 4, fontStyle: "italic" }}>Note : {o.note}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AdminPartners({ partners, orders, onMarkPartnerPaid, onRedeemPack }) {
+  if (partners.length === 0) return <p style={{ fontSize: 13, color: PALETTE.inkSoft }}>Aucun partenaire inscrit pour le moment.</p>;
+  return (
+    <div className="space-y-3">
+      {partners.map((p) => {
+        const myOrders = orders.filter((o) => o.partnerCode === p.code);
+        const total = myOrders.reduce((s, o) => s + o.total * COMMISSION_RATE, 0);
+        const paid = p.commissionPaid || 0;
+        const due = Math.max(0, total - paid);
+        const packsEarned = Math.floor(myOrders.length / BONUS_EVERY);
+        const packsAvailable = Math.max(0, packsEarned - (p.packsRedeemed || 0));
+        return (
+          <div key={p.code} className="rounded-2xl p-4" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div><p style={{ fontWeight: 700, fontSize: 14, color: PALETTE.ink }}>{p.name} · <span style={{ color: PALETTE.goldDeep }}>{p.code}</span></p><p style={{ fontSize: 12, color: PALETTE.inkSoft }}>{p.phone} · {myOrders.length} vente{myOrders.length !== 1 ? "s" : ""}</p></div>
+              {packsAvailable > 0 && <button onClick={() => onRedeemPack(p.code)} className="rounded-lg px-2.5 py-1.5 flex items-center gap-1" style={{ background: PALETTE.greenSoft, color: PALETTE.green, fontSize: 11.5, fontWeight: 700 }}><Gift size={13} /> {packsAvailable} pack{packsAvailable > 1 ? "s" : ""} — marquer remis</button>}
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <div className="rounded-lg p-2 text-center" style={{ background: PALETTE.creamSoft }}><p style={{ fontSize: 10.5, color: PALETTE.inkSoft }}>Gagné</p><p style={{ fontSize: 13, fontWeight: 700 }}>{formatFCFA(total)}</p></div>
+              <div className="rounded-lg p-2 text-center" style={{ background: PALETTE.creamSoft }}><p style={{ fontSize: 10.5, color: PALETTE.inkSoft }}>Versé</p><p style={{ fontSize: 13, fontWeight: 700 }}>{formatFCFA(paid)}</p></div>
+              <div className="rounded-lg p-2 text-center" style={{ background: PALETTE.redSoft }}><p style={{ fontSize: 10.5, color: PALETTE.red }}>Dû</p><p style={{ fontSize: 13, fontWeight: 700, color: PALETTE.red }}>{formatFCFA(due)}</p></div>
+            </div>
+            {due > 0 && <button onClick={() => onMarkPartnerPaid(p.code, total)} className="mt-2.5 text-xs font-semibold flex items-center gap-1" style={{ color: PALETTE.goldDeep }}><Check size={13} /> Marquer la commission comme versée</button>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AdminMenu({ menu, onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem, notify }) {
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
+  const blank = { name: "", price: "", desc: "", groupId: GROUPS_META[0].id, image: null };
+  const [draft, setDraft] = useState(blank);
+
+  const startEdit = (item) => { setEditing(item.id); setDraft({ ...item, price: String(item.price) }); setAdding(false); };
+  const cancel = () => { setEditing(null); setAdding(false); setDraft(blank); };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setImgUploading(true);
+    try {
+      const dataUrl = await resizeImageFile(file);
+      setDraft((d) => ({ ...d, image: dataUrl }));
+    } catch (err) {
+      notify("Impossible de charger cette image");
+    }
+    setImgUploading(false);
+  };
+
+  const save = async () => {
+    if (!draft.name.trim() || !draft.price) return;
+    const payload = { ...draft, price: Number(draft.price) || 0 };
+    if (adding) { await onAddMenuItem({ ...payload, id: `item-${Date.now()}`, active: true }); notify("Article ajouté"); }
+    else { await onUpdateMenuItem(editing, payload); notify("Article mis à jour"); }
+    cancel();
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="font-display" style={{ fontWeight: 700, fontSize: 15 }}>{menu.length} article{menu.length !== 1 ? "s" : ""}</p>
+        <PrimaryButton icon={Plus} onClick={() => { setAdding(true); setEditing(null); setDraft(blank); }}>Ajouter</PrimaryButton>
+      </div>
+
+      {(adding || editing) && (
+        <div className="rounded-2xl p-4 space-y-2.5" style={{ background: PALETTE.surface, border: `1.5px solid ${PALETTE.gold}` }}>
+          <div className="grid grid-cols-2 gap-2.5">
+            <TextField label="Nom" value={draft.name} onChange={(v) => setDraft({ ...draft, name: v })} />
+            <TextField label="Prix (FCFA)" value={draft.price} onChange={(v) => setDraft({ ...draft, price: v })} type="number" />
+          </div>
+          <TextField label="Description" value={draft.desc} onChange={(v) => setDraft({ ...draft, desc: v })} />
+          <label className="block">
+            <span style={{ fontSize: 12, color: PALETTE.inkSoft, fontWeight: 600 }}>Formule / Onglet</span>
+            <select value={draft.groupId} onChange={(e) => setDraft({ ...draft, groupId: e.target.value })} className="w-full mt-1.5 rounded-xl px-3 py-3" style={{ border: `1.5px solid ${PALETTE.border}`, background: PALETTE.cream, fontSize: 13 }}>
+              {GROUPS_META.map((g) => <option key={g.id} value={g.id}>{g.icon} {g.label}</option>)}
+            </select>
+          </label>
+
+          <div>
+            <span style={{ fontSize: 12, color: PALETTE.inkSoft, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Photo de l'article</span>
+            <div className="flex items-center gap-3 mt-1.5">
+              <ItemThumb item={draft} size={56} />
+              <label className="flex-1 rounded-xl py-2.5 px-3 flex items-center justify-center gap-2 cursor-pointer" style={{ background: PALETTE.creamSoft, border: `1.5px dashed ${PALETTE.border}`, color: PALETTE.ink, fontSize: 12.5, fontWeight: 600 }}>
+                {imgUploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={15} />}
+                {imgUploading ? "Chargement..." : draft.image ? "Changer la photo" : "Insérer une photo"}
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+              {draft.image && (
+                <button onClick={() => setDraft((d) => ({ ...d, image: null }))} className="rounded-lg p-2" style={{ background: PALETTE.redSoft }}><Trash2 size={14} color={PALETTE.red} /></button>
+              )}
+            </div>
+            <p style={{ fontSize: 10.5, color: PALETTE.inkSoft, marginTop: 4 }}>Choisissez une photo depuis votre téléphone ou ordinateur — elle est automatiquement redimensionnée.</p>
+          </div>
+
+          <div className="flex gap-2 pt-1"><PrimaryButton icon={Save} onClick={save}>Enregistrer</PrimaryButton><GhostButton onClick={cancel}>Annuler</GhostButton></div>
+        </div>
+      )}
+
+      {GROUPS_META.map((g) => {
+        const items = menu.filter((m) => m.groupId === g.id);
+        if (items.length === 0) return null;
+        return (
+          <div key={g.id}>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: PALETTE.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em", margin: "10px 2px 6px" }}>{g.icon} {g.label}</p>
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div key={item.id} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}`, opacity: item.active === false ? 0.55 : 1 }}>
+                  <ItemThumb item={item} size={44} />
+                  <div className="flex-1 min-w-0"><p style={{ fontWeight: 700, fontSize: 13.5, color: PALETTE.ink }}>{item.name}</p><p style={{ fontSize: 11.5, color: PALETTE.inkSoft }}>{formatFCFA(item.price)}</p></div>
+                  <button onClick={() => onUpdateMenuItem(item.id, { active: item.active === false })} className="rounded-lg px-2 py-1.5" style={{ background: PALETTE.creamSoft, fontSize: 10.5, fontWeight: 600, color: PALETTE.ink }}>{item.active === false ? "Indisponible" : "Disponible"}</button>
+                  <button onClick={() => startEdit(item)}><Pencil size={15} color={PALETTE.inkSoft} /></button>
+                  <button onClick={() => onDeleteMenuItem(item.id)}><Trash2 size={15} color={PALETTE.red} /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AdminSettings({ settings, onUpdateSettings, onExportData, onImportData, notify }) {
+  const [newPin, setNewPin] = useState("");
+  const [serviceTel, setServiceTel] = useState(settings.serviceTel || "");
+  const [mtnNumber, setMtnNumber] = useState(settings.mtnNumber || "");
+  const [orangeNumber, setOrangeNumber] = useState(settings.orangeNumber || "");
+  const [bankDetails, setBankDetails] = useState(settings.bankDetails || "");
+
+  const changePin = async () => {
+    if (newPin.trim().length < 4) { notify("Le code doit faire au moins 4 chiffres."); return; }
+    await onUpdateSettings({ ...settings, adminPin: newPin.trim() }); setNewPin(""); notify("Code PIN mis à jour");
+  };
+  const saveContact = async () => {
+    await onUpdateSettings({ ...settings, serviceTel, mtnNumber, orangeNumber, bankDetails });
+    notify("Coordonnées mises à jour");
+  };
+  const handleImportFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) onImportData(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl p-5 space-y-2.5" style={{ background: PALETTE.surface, border: `1.5px solid ${PALETTE.gold}` }}>
+        <p className="font-display" style={{ fontWeight: 700, fontSize: 14.5 }}>Sauvegarde manuelle</p>
+        <p style={{ fontSize: 12, color: PALETTE.inkSoft, lineHeight: 1.5 }}>Si la sauvegarde automatique ne fonctionne pas dans ton environnement, télécharge une sauvegarde après chaque modification, puis restaure-la à la prochaine ouverture pour retrouver ton menu, tes commandes et tes partenaires.</p>
+        <div className="flex gap-2">
+          <PrimaryButton icon={Save} onClick={onExportData}>Télécharger une sauvegarde</PrimaryButton>
+          <label className="rounded-xl px-5 py-3 flex items-center justify-center gap-2 cursor-pointer" style={{ background: "transparent", border: `1.5px solid ${PALETTE.border}`, color: PALETTE.ink, fontWeight: 600, fontSize: 14 }}>
+            Restaurer
+            <input type="file" accept="application/json" onChange={handleImportFile} className="hidden" />
+          </label>
+        </div>
+      </div>
+
+      <div className="rounded-2xl p-5 space-y-3" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+        <p className="font-display" style={{ fontWeight: 700, fontSize: 14.5 }}>Contact & paiements</p>
+        <TextField label="Numéro service client" value={serviceTel} onChange={setServiceTel} placeholder="+237 6XX XXX XXX" icon={Phone} />
+        <TextField label="Numéro MTN Mobile Money" value={mtnNumber} onChange={setMtnNumber} placeholder="+237 6XX XXX XXX" icon={Smartphone} />
+        <TextField label="Numéro Orange Money" value={orangeNumber} onChange={setOrangeNumber} placeholder="+237 6XX XXX XXX" icon={Smartphone} />
+        <TextField label="Coordonnées bancaires (RIB / IBAN)" value={bankDetails} onChange={setBankDetails} placeholder="Banque, numéro de compte..." icon={Building2} />
+        <PrimaryButton onClick={saveContact}>Enregistrer ces coordonnées</PrimaryButton>
+        <p style={{ fontSize: 11, color: PALETTE.inkSoft }}>Ces informations s'affichent aux clients qui choisissent MTN MoMo, Orange Money ou virement bancaire au moment de la commande.</p>
+      </div>
+
+      <div className="rounded-2xl p-5" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+        <p className="font-display" style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 10 }}>Changer le code PIN de gestion</p>
+        <div className="flex gap-2 items-end"><div className="flex-1"><TextField value={newPin} onChange={setNewPin} placeholder="Nouveau code" type="password" /></div><PrimaryButton onClick={changePin}>Mettre à jour</PrimaryButton></div>
+      </div>
+
+      <div className="rounded-2xl p-5 flex items-start gap-3" style={{ background: PALETTE.creamSoft, border: `1px solid ${PALETTE.border}` }}>
+        <AlertCircle size={18} color={PALETTE.terracotta} className="flex-shrink-0 mt-0.5" />
+        <p style={{ fontSize: 12.5, color: PALETTE.ink, lineHeight: 1.5 }}>Les paiements Mobile Money et bancaires ne sont pas traités automatiquement par l'application : le client envoie le paiement au numéro affiché, puis l'équipe le confirme manuellement en marquant la commande "Payé" dans Commandes. Les données (commandes, partenaires, menu) sont partagées et visibles par toute personne ayant accès à cette application.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== ROOT APP ============================== */
+function App() {
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState("menu");
+  const [menu, setMenu] = useState(DEFAULT_MENU);
+  const [orders, setOrders] = useState([]);
+  const [partners, setPartners] = useState([]);
+  const [settings, setSettings] = useState({ adminPin: "2025", serviceTel: "+237 658045643", mtnNumber: "+237 677034742", orangeNumber: "+237 699642883", bankDetails: "Titulaire : Mme GRACE ELODIE MANICH KOUAM — OM IBAN : CM21 13001 00001 10020276349 97" });
+  const [toast, setToast] = useState("");
+  const notify = (msg) => setToast(msg);
+
+  const safePersist = (key, value) => {
+    return persist(key, value);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    function load() {
+
+      const safeGet = (key, fallback) => {
+        try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; }
+        catch (e) { return fallback; }
+      };
+      const [m, o, p, s] = await Promise.all([
+        safeGet("menu_v3", DEFAULT_MENU),
+        safeGet("orders", []),
+        safeGet("partners", []),
+        safeGet("settings", { adminPin: "2025", serviceTel: "+237 658045643", mtnNumber: "+237 677034742", orangeNumber: "+237 699642883", bankDetails: "Titulaire : Mme GRACE ELODIE MANICH KOUAM — OM IBAN : CM21 13001 00001 10020276349 97" }),
+      ]);
+      if (!mounted) return;
+      setMenu(m); setOrders(o); setPartners(p); setSettings(s);
+      setLoading(false);
+      safePersist("menu_v3", m);
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const placeOrder = async (orderDraft) => {
+    const order = { ...orderDraft, id: genOrderId(), createdAt: new Date().toISOString(), status: "Nouvelle" };
+    const updated = [order, ...orders];
+    setOrders(updated); safePersist("orders", updated); return order;
+  };
+  const updateOrderStatus = async (id, status) => {
+    const updated = orders.map((o) => (o.id === id ? { ...o, status } : o));
+    setOrders(updated); safePersist("orders", updated);
+  };
+  const toggleOrderPaid = async (id) => {
+    const updated = orders.map((o) => (o.id === id ? { ...o, paid: !o.paid } : o));
+    setOrders(updated); safePersist("orders", updated);
+  };
+  const addPartner = async (partnerDraft) => {
+    const partner = { ...partnerDraft, createdAt: new Date().toISOString(), commissionPaid: 0, packsRedeemed: 0 };
+    const updated = [...partners, partner];
+    setPartners(updated); safePersist("partners", updated); return partner;
+  };
+  const markPartnerPaid = async (code, totalEarned) => {
+    const updated = partners.map((p) => (p.code === code ? { ...p, commissionPaid: totalEarned } : p));
+    setPartners(updated); safePersist("partners", updated); notify("Commission marquée comme versée");
+  };
+  const redeemPack = async (code) => {
+    const updated = partners.map((p) => (p.code === code ? { ...p, packsRedeemed: (p.packsRedeemed || 0) + 1 } : p));
+    setPartners(updated); safePersist("partners", updated); notify("Pack marqué comme remis");
+  };
+  const addMenuItem = async (item) => { const updated = [...menu, item]; setMenu(updated); safePersist("menu_v3", updated); };
+  const updateMenuItem = async (id, patch) => { const updated = menu.map((m) => (m.id === id ? { ...m, ...patch } : m)); setMenu(updated); safePersist("menu_v3", updated); };
+  const deleteMenuItem = async (id) => { const updated = menu.filter((m) => m.id !== id); setMenu(updated); safePersist("menu_v3", updated); };
+  const updateSettings = async (next) => { setSettings(next); safePersist("settings", next); };
+
+  const exportData = () => {
+    try {
+      const payload = { menu, orders, partners, settings, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mw-tastes-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      notify("Sauvegarde téléchargée ✓");
+    } catch (e) {
+      notify("Impossible de générer la sauvegarde");
+    }
+  };
+
+  const importData = async (file) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data.menu) { setMenu(data.menu); safePersist("menu_v3", data.menu); }
+      if (data.orders) { setOrders(data.orders); safePersist("orders", data.orders); }
+      if (data.partners) { setPartners(data.partners); safePersist("partners", data.partners); }
+      if (data.settings) { setSettings(data.settings); safePersist("settings", data.settings); }
+      notify("Sauvegarde restaurée ✓");
+    } catch (e) {
+      notify("Fichier de sauvegarde invalide");
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center" style={{ background: PALETTE.black }}><Loader2 className="animate-spin" size={26} color={PALETTE.gold} /></div>;
+  }
+
+  return (
+    <div className="min-h-screen" style={{ background: PALETTE.cream }}>
+      <style>{`
+        * { font-family: 'Outfit', sans-serif; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .scrollbar-thin::-webkit-scrollbar { height: 5px; width: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: ${PALETTE.gold}; border-radius: 4px; }
+        select { -webkit-appearance: none; appearance: none; }
+      `}</style>
+      <Header view={view} setView={setView} />
+
+      {view === "menu" && <MenuView menu={menu} orders={orders} partners={partners} settings={settings} onPlaceOrder={placeOrder} notify={notify} />}
+      {view === "partner" && <PartnerView partners={partners} orders={orders} onAddPartner={addPartner} notify={notify} />}
+      {view === "admin" && <AdminView menu={menu} orders={orders} partners={partners} settings={settings} onUpdateOrderStatus={updateOrderStatus} onTogglePaid={toggleOrderPaid} onUpdateSettings={updateSettings} onAddMenuItem={addMenuItem} onUpdateMenuItem={updateMenuItem} onDeleteMenuItem={deleteMenuItem} onMarkPartnerPaid={markPartnerPaid} onRedeemPack={redeemPack} onExportData={exportData} onImportData={importData} notify={notify} />}
+      <Toast message={toast} onClose={() => setToast("")} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
